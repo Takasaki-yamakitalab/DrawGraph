@@ -1,5 +1,6 @@
 #include "DrawGraph/draw_graph.hpp"
 #include <cmath>
+#include <memory>
 
 namespace draw_graph {
     DrawGraph::DrawGraph(int width, int height) : width(width), height(height), draw_buffer(width* height, bmp::DEFAULT_BACKWARD_COLOR) {
@@ -147,7 +148,7 @@ namespace draw_graph {
         Graph graph;
         graph.input = input;
         graph.formula = formula;
-        graph.var = var;
+        graph.var = {var};
         graph.color = color;
         graph.lineWidth = this->lineWidth;
         this->graphs.push_back(graph);
@@ -160,23 +161,58 @@ namespace draw_graph {
         if (formula.size() == 0) return;
         Graph graph;
         graph.formula = formula;
-        graph.var = var;
+        graph.var = {var};
         graph.color = color;
         graph.lineWidth = this->lineWidth;
         this->graphs.push_back(graph);
         this->cursor = this->graphs.size() - 1;
     }
 
-    void DrawGraph::refresh() {
-        sci_calc::SciCalc calc(1024, false);
+    void DrawGraph::insert_var_name(const std::string& str) {
+        for (auto& letter : LETTER_LIST) {
+            if (str == letter) {
+                var_name_temp.push_back(str);
+                return;
+            }
+        }
+    }
+    void DrawGraph::delete_var_name() {
+        var_name_temp.clear();
+    }
+    void DrawGraph::apply_var_name() {
+        if (graphs.size() == 0) return;
+        if (cursor < 0 || graphs.size() <= cursor) return;
+        if (var_name_temp.size() == 0) var_name_temp = {"x"};
+        graphs[cursor].var = var_name_temp;
+        var_name_temp.clear();
+    }
 
+    void DrawGraph::refresh(sci_calc::SciCalc& calc) {
         for (auto& buf : this->draw_buffer) {
             buf = bmp::DEFAULT_BACKWARD_COLOR;
         }
 
         draw_axis();
+        if (graphs.size() == 0) return;
 
-        if (graphs.size() > 0) this->draw_math_input(3, 3, graphs[cursor].input);
+        if (0 <= cursor && cursor < graphs.size()) {
+            auto input = graphs[cursor].input;
+            int cur = 0;
+            math_renderer::insert_input(input, cur, "f");
+            math_renderer::insert_input(input, cur, "open_bracket");
+            for (auto& str : graphs[cursor].var) {
+                math_renderer::insert_input(input, cur, str);
+            }
+            math_renderer::insert_input(input, cur, "close_bracket");
+            math_renderer::insert_input(input, cur, "equal");
+            this->draw_math_input(3, 3, input);
+        }
+
+        if (var_name_temp.size() != 0) {
+            this->draw_string(3, height - math_renderer::BASE_H - 3, var_name_temp);
+        }
+
+        calc.set_integral_N(1024);
 
         int x1, y1, x2, y2;
         for (int i = 0; i < this->graphs.size(); i++) {
@@ -189,8 +225,13 @@ namespace draw_graph {
                 color = GRAPH_COLOR_PALETTE[i % 10];
             }
 
+            std::string var;
+            for (auto& str : graph.var) {
+                var += str;
+            }
+            double memory = calc.get_memory(var);
             for (x1 = 0; x1 < this->width; x1++) {
-                calc.assign_memory(graph.var, displayX2posX(x1));
+                calc.assign_memory(var, displayX2posX(x1));
                 double ans = calc.calc(graph.formula);
                 if (std::isnan(ans)) continue;
                 y1 = posY2displayY(ans);
@@ -198,7 +239,7 @@ namespace draw_graph {
             }
             while (x1 < this->width) {
                 x2 = x1 + 1;
-                calc.assign_memory(graph.var, displayX2posX(x2));
+                calc.assign_memory(var, displayX2posX(x2));
                 y2 = posY2displayY(calc.calc(graph.formula));
                 if (y2 != GRAPH_NAN) {
                     if (y1 == GRAPH_NAN) y1 = y2;
@@ -207,6 +248,9 @@ namespace draw_graph {
                 }
                 x1 = x2;
             }
+            calc.assign_memory(var, memory);
         }
+
+        calc.set_integral_N();
     }
 }

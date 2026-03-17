@@ -58,13 +58,36 @@ namespace draw_graph {
             draw_letter(posX, posY, c - 'a' + math_renderer::LETTER_a, color);
             return 1;
         }
+        return 0;
+    }
+    int DrawGraph::draw_char(int posX, int posY, const std::string& c, uint32_t color) {
+        if (c.size() == 1) return draw_char(posX, posY, c[0], color);
         for (int i = 0; i < LETTER_LIST.size(); i++) {
-            if (c == LETTER_LIST[i][0]) {
+            if (c == LETTER_LIST[i]) {
                 draw_letter(posX, posY, i, color);
                 return 1;
             }
         }
         return 0;
+    }
+
+    int DrawGraph::draw_string(int posX, int posY, const std::string& str, uint32_t color) {
+        int cnt = 0;
+        for (auto& c : str) {
+            int num = draw_char(posX, posY, c, color);
+            cnt += num;
+            posX += math_renderer::BASE_W * num;
+        }
+        return cnt;
+    }
+    int DrawGraph::draw_string(int posX, int posY, const std::vector<std::string>& str, uint32_t color) {
+        int cnt = 0;
+        for (auto& c : str) {
+            int num = draw_char(posX, posY, c, color);
+            cnt += num;
+            posX += math_renderer::BASE_W * num;
+        }
+        return cnt;
     }
 
     void DrawGraph::draw_letter(int posX, int posY, int letter_id, uint32_t color) {

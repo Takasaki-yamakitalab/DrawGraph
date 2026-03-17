@@ -9,24 +9,26 @@ int main(void) {
         glyphs.push_back(bmp::extractGlyph(img, i, math_renderer::BASE_W, math_renderer::BASE_H));
     }
 
+    sci_calc::SciCalc calc;
     draw_graph::DrawGraph plot(400, 300);
     plot.load_glyph_list(glyphs);
 
     plot.plot("@lnx", "x");
-    plot.refresh();
+    plot.refresh(calc);
     bmp::save32bitBMP("result0.bmp", 400, 300, plot.get_draw_buffer());
 
     plot.shift(300, 0);
-    plot.refresh();
+    plot.refresh(calc);
     bmp::save32bitBMP("result1.bmp", 400, 300, plot.get_draw_buffer());
 
     plot.zoom(2);
     std::cout << "tics: " << plot.get_tics() << std::endl;
-    plot.refresh();
+    plot.refresh(calc);
     bmp::save32bitBMP("result2.bmp", 400, 300, plot.get_draw_buffer());
 
-    std::cout << "Press Enter to exit" << std::endl;
     bmp::save32bitBMP("result.bmp", 400, 300, plot.get_draw_buffer());
+
+    std::cout << "Press Enter to exit" << std::endl;
     std::cin.get();
     return 0;
 }
