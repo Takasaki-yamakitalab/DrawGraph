@@ -6,66 +6,67 @@
 #include "draw_graph_defines.hpp"
 
 namespace draw_graph {
-    struct Graph {
-        std::vector<math_renderer::Token> input;
-        std::string formula;
-        std::vector<std::string> var;
-        uint32_t color;
-        uint32_t lineWidth;
-    };
+struct Graph {
+    std::vector<math_renderer::Token> input;
+    std::string formula;
+    std::vector<std::string> var;
+    uint32_t color;
+    uint32_t lineWidth;
+};
 
-    class DrawGraph {
-    private:
-        int scale = SCALE_DEFAULT;    // number of pixels per division
-        int offsetX = 0;
-        int offsetY = 0;
-        int lineWidth = 3;
-        int width;
-        int height;
-        int cursor = 0;
-        std::vector<uint32_t> draw_buffer;
-        std::vector<bmp::Glyph> glyphs;
-        std::vector<Graph> graphs;
-        std::vector<std::string> var_name_temp;
-    public:
-        DrawGraph(int width, int height);
-        void load_glyph_list(const std::vector<bmp::Glyph>& glyph_list);
-        uint32_t* get_draw_buffer();
+class DrawGraph {
+   private:
+    int scale = SCALE_DEFAULT;  // number of pixels per division
+    int offsetX = 0;
+    int offsetY = 0;
+    int lineWidth = 3;
+    int width;
+    int height;
+    int cursor = 0;
+    std::vector<uint32_t> draw_buffer;
+    std::vector<bmp::Glyph> glyphs;
+    std::vector<Graph> graphs;
+    std::vector<std::string> var_name_temp;
 
-        void zoom(double mag);
-        void shift(int dx, int dy);
-        void reset_scale();
-        void clear_all();
+   public:
+    DrawGraph(int width, int height);
+    void load_glyph_list(const std::vector<bmp::Glyph>& glyph_list);
+    uint32_t* get_draw_buffer();
 
-        int move_cursor(int move);
-        int delete_graph();
+    void zoom(double mag);
+    void shift(int dx, int dy);
+    void reset_scale();
+    void clear_all();
 
-        int posX2displayX(double x);
-        int posY2displayY(double x);
-        double displayX2posX(int x);
-        double displayY2posY(int x);
-        double get_tics();
-        std::vector<math_renderer::Token> get_graph_input();
+    int move_cursor(int move);
+    int delete_graph();
 
-        int draw_number(int posX, int posY, double num, uint32_t color = TEXT_COLOR);
-        int get_number_width(double num);
-        int draw_char(int posX, int posY, char c, uint32_t color = TEXT_COLOR);
-        int draw_char(int posX, int posY, const std::string& c, uint32_t color = TEXT_COLOR);
-        int draw_string(int posX, int posY, const std::string& str, uint32_t color = TEXT_COLOR);
-        int draw_string(int posX, int posY, const std::vector<std::string>& str, uint32_t color = TEXT_COLOR);
-        void draw_letter(int posX, int posY, int letter_id, uint32_t color = TEXT_COLOR);
-        void draw_math_input(int posX, int posY, std::vector<math_renderer::Token>& input, uint32_t color = TEXT_COLOR);
+    int posX2displayX(double x);
+    int posY2displayY(double x);
+    double displayX2posX(int x);
+    double displayY2posY(int x);
+    double get_tics();
+    std::vector<math_renderer::Token> get_graph_input();
 
-        void draw_axis();
-        void plot(const std::vector<math_renderer::Token>& input, const std::string& var);
-        void plot(const std::vector<math_renderer::Token>& input, const std::string& var, uint32_t color);
-        void plot(const std::string& formula, const std::string& var);
-        void plot(const std::string& formula, const std::string& var, uint32_t color);
-        void insert_var_name(const std::string& str);
-        void delete_var_name();
-        void apply_var_name();
-        void refresh(sci_calc::SciCalc& calc);
-    };
-}
+    int draw_number(int posX, int posY, double num, uint32_t color = TEXT_COLOR);
+    int get_number_width(double num);
+    int draw_char(int posX, int posY, char c, uint32_t color = TEXT_COLOR);
+    int draw_char(int posX, int posY, const std::string& c, uint32_t color = TEXT_COLOR);
+    int draw_string(int posX, int posY, const std::string& str, uint32_t color = TEXT_COLOR);
+    int draw_string(int posX, int posY, const std::vector<std::string>& str, uint32_t color = TEXT_COLOR);
+    void draw_letter(int posX, int posY, int letter_id, uint32_t color = TEXT_COLOR);
+    void draw_math_input(int posX, int posY, std::vector<math_renderer::Token>& input, uint32_t color = TEXT_COLOR);
+
+    void draw_axis();
+    void plot(const std::vector<math_renderer::Token>& input, const std::string& var);
+    void plot(const std::vector<math_renderer::Token>& input, const std::string& var, uint32_t color);
+    void plot(const std::string& formula, const std::string& var);
+    void plot(const std::string& formula, const std::string& var, uint32_t color);
+    void insert_var_name(const std::string& str);
+    void delete_var_name();
+    void apply_var_name();
+    void refresh(sci_calc::SciCalc& calc);
+};
+}  // namespace draw_graph
 
 #endif
