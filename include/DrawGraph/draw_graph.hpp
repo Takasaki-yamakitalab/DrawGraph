@@ -23,6 +23,8 @@ class DrawGraph {
     int width;
     int height;
     int cursor = 0;
+    int exit_code_show_graph = 2;
+    int exit_code_exit = -1;
     std::vector<uint32_t> draw_buffer;
     std::vector<bmp::Glyph> glyphs;
     std::vector<Graph> graphs;
@@ -30,6 +32,7 @@ class DrawGraph {
 
    public:
     DrawGraph(int width, int height);
+    DrawGraph(int width, int height, int exit_code_show_graph, int exit_code_exit);
     void load_glyph_list(const std::vector<bmp::Glyph>& glyph_list);
     uint32_t* get_draw_buffer();
 
@@ -66,6 +69,8 @@ class DrawGraph {
     void delete_var_name();
     void apply_var_name();
     void refresh(sci_calc::SciCalc& calc);
+
+    int process_input(std::string str);
 };
 }  // namespace draw_graph
 

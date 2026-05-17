@@ -1,8 +1,13 @@
 #include "DrawGraph/draw_graph.hpp"
+#include <MathRenderer/bmp.hpp>
 #include <cmath>
 
 namespace draw_graph {
-DrawGraph::DrawGraph(int width, int height) : width(width), height(height), draw_buffer(width * height, bmp::DEFAULT_BACKWARD_COLOR) {
+DrawGraph::DrawGraph(int width, int height)
+    : width(width), height(height), draw_buffer(width * height, bmp::DEFAULT_BACKWARD_COLOR) {
+}
+DrawGraph::DrawGraph(int width, int height, int exit_code_show_graph, int exit_code_exit)
+    : width(width), height(height), exit_code_show_graph(exit_code_show_graph), exit_code_exit(exit_code_exit), draw_buffer(width * height, bmp::DEFAULT_BACKWARD_COLOR) {
 }
 
 void DrawGraph::load_glyph_list(const std::vector<bmp::Glyph>& glyph_list) {
@@ -34,6 +39,7 @@ void DrawGraph::reset_scale() {
 void DrawGraph::clear_all() {
     reset_scale();
     graphs.clear();
+    var_name_temp.clear();
     cursor = 0;
     for (auto& buf : this->draw_buffer) {
         buf = bmp::DEFAULT_BACKWARD_COLOR;

@@ -17,6 +17,7 @@ set(SRC
     src/draw_graph.cpp
     src/draw_graph_text.cpp
     src/draw_graph_transpose.cpp
+    src/draw_graph_input.cpp
 )
 
 if(MSVC)
