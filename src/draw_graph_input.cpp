@@ -59,4 +59,12 @@ int DrawGraph::process_input(std::string str) {
     }
     return exit_code_show_graph;
 }
+
+int DrawGraph::process_touch(int x, int y) {
+    return 0;
+}
+int DrawGraph::process_swipe(int dx, int dy) {
+    this->shift(dx, dy);
+    return 0;
+}
 }  // namespace draw_graph

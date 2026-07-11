@@ -53,8 +53,8 @@ int DrawGraph::move_cursor(int move) {
     }
 
     cursor += move;
-    while (cursor < 0) cursor += this->graphs.size();
-    cursor = cursor % this->graphs.size();
+    while (cursor < 0) cursor += this->graphs.size() + 1;
+    cursor = cursor % (this->graphs.size() + 1);
     return cursor;
 }
 int DrawGraph::delete_graph() {
@@ -62,6 +62,7 @@ int DrawGraph::delete_graph() {
         this->cursor = 0;
         return 0;
     }
+    if (this->graphs.size() <= this->cursor) return 0;
     this->graphs.erase(this->graphs.begin() + cursor);
     if (graphs.size() == 0) {
         cursor = 0;
@@ -72,6 +73,7 @@ int DrawGraph::delete_graph() {
 }
 std::vector<math_renderer::Token> DrawGraph::get_graph_input() {
     if (this->graphs.size() == 0) return std::vector<math_renderer::Token>();
+    if (this->graphs.size() <= this->cursor) return std::vector<math_renderer::Token>();
     return this->graphs[this->cursor].input;
 }
 
@@ -188,13 +190,13 @@ void DrawGraph::apply_var_name() {
     var_name_temp.clear();
 }
 
-void DrawGraph::refresh(sci_calc::SciCalc& calc) {
+int DrawGraph::refresh(sci_calc::SciCalc& calc) {
     for (auto& buf : this->draw_buffer) {
         buf = bmp::DEFAULT_BACKWARD_COLOR;
     }
 
-    draw_axis();
-    if (graphs.size() == 0) return;
+    if (this->cursor != this->graphs.size()) draw_axis();
+    if (graphs.size() == 0) return -1;
 
     if (0 <= cursor && cursor < graphs.size()) {
         auto input = graphs[cursor].input;
@@ -230,19 +232,21 @@ void DrawGraph::refresh(sci_calc::SciCalc& calc) {
         for (auto& str : graph.var) {
             var += str;
         }
-        double memory = calc.get_memory(var);
+        sci_calc::Complex memory = calc.get_memory(var);
         for (x1 = 0; x1 < this->width; x1++) {
             calc.assign_memory(var, displayX2posX(x1));
-            double ans = calc.calc(graph.formula);
-            if (std::isnan(ans)) continue;
-            y1 = posY2displayY(ans);
+            sci_calc::Complex ans = calc.calc(graph.formula);
+            if (std::isnan(ans.real()) || std::abs(ans.imag()) > 1e-15) continue;
+            y1 = posY2displayY(ans.real());
             break;
         }
         while (x1 < this->width) {
             x2 = x1 + 1;
             calc.assign_memory(var, displayX2posX(x2));
-            y2 = posY2displayY(calc.calc(graph.formula));
-            if (y2 != GRAPH_NAN) {
+            sci_calc::Complex ans = calc.calc(graph.formula);
+            y2 = posY2displayY(ans.real());
+            // y2 = posY2displayY(calc.calc(graph.formula).real());
+            if (y2 != GRAPH_NAN && std::abs(ans.imag()) < 1e-15) {
                 if (y1 == GRAPH_NAN) y1 = y2;
                 bmp::drawLine(this->draw_buffer.data(), width, height, x1, y1, x2, y2, lw, color);
                 y1 = y2;
@@ -251,7 +255,9 @@ void DrawGraph::refresh(sci_calc::SciCalc& calc) {
         }
         calc.assign_memory(var, memory);
     }
+    if (this->cursor == this->graphs.size()) draw_axis();
 
     calc.set_integral_N();
+    return 0;
 }
 }  // namespace draw_graph

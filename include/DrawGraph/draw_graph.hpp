@@ -68,9 +68,11 @@ class DrawGraph {
     void insert_var_name(const std::string& str);
     void delete_var_name();
     void apply_var_name();
-    void refresh(sci_calc::SciCalc& calc);
+    int refresh(sci_calc::SciCalc& calc);
 
     int process_input(std::string str);
+    int process_touch(int x, int y);
+    int process_swipe(int dx, int dy);
 };
 }  // namespace draw_graph
 
