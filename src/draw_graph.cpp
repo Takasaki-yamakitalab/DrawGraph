@@ -234,18 +234,31 @@ int DrawGraph::refresh(sci_calc::SciCalc& calc) {
         }
         sci_calc::Complex memory = calc.get_memory(var);
         for (x1 = 0; x1 < this->width; x1++) {
-            calc.assign_memory(var, displayX2posX(x1));
-            sci_calc::Complex ans = calc.calc(graph.formula);
+            sci_calc::Complex ans = 0.0;
+            if (!graph.points.count(displayX2posX(x1))) {
+                calc.assign_memory(var, displayX2posX(x1));
+                ans = calc.calc(graph.formula);
+                graph.points[displayX2posX(x1)] = ans;
+            }
+            else {
+                ans = graph.points[displayX2posX(x1)];
+            }
             if (std::isnan(ans.real()) || std::abs(ans.imag()) > 1e-15) continue;
             y1 = posY2displayY(ans.real());
             break;
         }
         while (x1 < this->width) {
             x2 = x1 + 1;
-            calc.assign_memory(var, displayX2posX(x2));
-            sci_calc::Complex ans = calc.calc(graph.formula);
+            sci_calc::Complex ans = 0.0;
+            if (!graph.points.count(displayX2posX(x2))) {
+                calc.assign_memory(var, displayX2posX(x2));
+                ans = calc.calc(graph.formula);
+                graph.points[displayX2posX(x2)] = ans;
+            }
+            else {
+                ans = graph.points[displayX2posX(x2)];
+            }
             y2 = posY2displayY(ans.real());
-            // y2 = posY2displayY(calc.calc(graph.formula).real());
             if (y2 != GRAPH_NAN && std::abs(ans.imag()) < 1e-15) {
                 if (y1 == GRAPH_NAN) y1 = y2;
                 bmp::drawLine(this->draw_buffer.data(), width, height, x1, y1, x2, y2, lw, color);

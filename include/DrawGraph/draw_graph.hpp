@@ -3,6 +3,7 @@
 
 #include <SciCalc/sci_calc.hpp>
 #include <MathRenderer/math_renderer.hpp>
+#include <unordered_map>
 #include "draw_graph_defines.hpp"
 
 namespace draw_graph {
@@ -12,6 +13,7 @@ struct Graph {
     std::vector<std::string> var;
     uint32_t color;
     uint32_t lineWidth;
+    std::unordered_map<double, sci_calc::Complex> points;
 };
 
 class DrawGraph {
