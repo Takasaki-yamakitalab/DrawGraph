@@ -35,6 +35,7 @@ class DrawGraph {
    public:
     DrawGraph(int width, int height);
     DrawGraph(int width, int height, int exit_code_show_graph, int exit_code_exit);
+    void load_glyphs();
     void load_glyph_list(const std::vector<bmp::Glyph>& glyph_list);
     uint32_t* get_draw_buffer();
 

@@ -1,15 +1,26 @@
 #include "DrawGraph/draw_graph.hpp"
+#include <BitmapTool/bmp.hpp>
+#include <DotFont/dot_font_x11y23.bmp.hpp>
 #include <MathRenderer/bmp.hpp>
 #include <cmath>
 
 namespace draw_graph {
 DrawGraph::DrawGraph(int width, int height)
     : width(width), height(height), draw_buffer(width * height, bmp::DEFAULT_BACKWARD_COLOR) {
+    load_glyphs();
 }
 DrawGraph::DrawGraph(int width, int height, int exit_code_show_graph, int exit_code_exit)
     : width(width), height(height), exit_code_show_graph(exit_code_show_graph), exit_code_exit(exit_code_exit), draw_buffer(width * height, bmp::DEFAULT_BACKWARD_COLOR) {
+    load_glyphs();
 }
 
+void DrawGraph::load_glyphs() {
+    bmp::Image img = bmp::loadBMP1bit((char*)dot_font::img, sizeof(dot_font::img));
+    this->glyphs.clear();
+    for (int i = 0; i < dot_font::LETTER_NUM; i++) {
+         glyphs.push_back(bmp::extractGlyph(img, i, dot_font::BASE_W, dot_font::BASE_H));
+    }
+}
 void DrawGraph::load_glyph_list(const std::vector<bmp::Glyph>& glyph_list) {
     glyphs = glyph_list;
 }
@@ -53,7 +64,7 @@ int DrawGraph::move_cursor(int move) {
     }
 
     cursor += move;
-    while (cursor < 0) cursor += this->graphs.size() + 1;
+    while (cursor < 0) cursor += (int)this->graphs.size() + 1;
     cursor = cursor % (this->graphs.size() + 1);
     return cursor;
 }
@@ -68,7 +79,7 @@ int DrawGraph::delete_graph() {
         cursor = 0;
         return 0;
     }
-    cursor = graphs.size() - 1;
+    cursor = (int)graphs.size() - 1;
     return cursor;
 }
 std::vector<math_renderer::Token> DrawGraph::get_graph_input() {

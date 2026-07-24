@@ -3,15 +3,8 @@
 #include "../include/DrawGraph/draw_graph.hpp"
 
 int main(void) {
-    bmp::Image img = bmp::loadBMP1bit("dot_font_x11y23.bmp");
-    std::vector<bmp::Glyph> glyphs;
-    for (int i = 0; i < math_renderer::LETTER_NUM; i++) {
-        glyphs.push_back(bmp::extractGlyph(img, i, math_renderer::BASE_W, math_renderer::BASE_H));
-    }
-
     sci_calc::SciCalc calc;
     draw_graph::DrawGraph plot(400, 300);
-    plot.load_glyph_list(glyphs);
 
     plot.plot("@lnx", "x");
     plot.refresh(calc);

@@ -4,7 +4,11 @@ namespace draw_graph {
 
 int DrawGraph::draw_number(int posX, int posY, double num, uint32_t color) {
     char buff[256];
+#ifdef ANDROID
     sprintf(buff, "%g", num);
+#else
+    sprintf_s(buff, sizeof(buff), "%g", num);
+#endif
     int cnt = 0;
     for (int i = 0; i < strlen(buff); i++) {
         switch (buff[i]) {
@@ -18,26 +22,31 @@ int DrawGraph::draw_number(int posX, int posY, double num, uint32_t color) {
             case '7':
             case '8':
             case '9':
-                bmp::drawGlyph(this->draw_buffer.data(), this->width, this->height, posX, posY, this->glyphs[buff[i] - '0'], 1, color);
+                bmp::drawGlyph(this->draw_buffer.data(), this->width, this->height, posX, posY,
+                               this->glyphs[buff[i] - '0'], 1, color);
                 posX += math_renderer::BASE_W;
                 cnt++;
                 break;
             case '.':
-                bmp::drawGlyph(this->draw_buffer.data(), this->width, this->height, posX, posY, this->glyphs[math_renderer::LETTER_PERIOD], 1, color);
+                bmp::drawGlyph(this->draw_buffer.data(), this->width, this->height, posX, posY,
+                               this->glyphs[dot_font::LETTER_PERIOD], 1, color);
                 posX += math_renderer::BASE_W;
                 cnt++;
                 break;
             case '-':
-                bmp::drawGlyph(this->draw_buffer.data(), this->width, this->height, posX, posY, this->glyphs[math_renderer::LETTER_MINUS], 1, color);
+                bmp::drawGlyph(this->draw_buffer.data(), this->width, this->height, posX, posY,
+                               this->glyphs[dot_font::LETTER_MINUS], 1, color);
                 posX += math_renderer::BASE_W;
                 cnt++;
                 break;
             case 'e':
-                bmp::drawGlyph(this->draw_buffer.data(), this->width, this->height, posX, posY, this->glyphs[math_renderer::LETTER_e], 1, color);
+                bmp::drawGlyph(this->draw_buffer.data(), this->width, this->height, posX, posY,
+                               this->glyphs[dot_font::LETTER_e], 1, color);
                 posX += math_renderer::BASE_W;
                 cnt++;
             case 'E':
-                bmp::drawGlyph(this->draw_buffer.data(), this->width, this->height, posX, posY, this->glyphs[math_renderer::LETTER_E], 1, color);
+                bmp::drawGlyph(this->draw_buffer.data(), this->width, this->height, posX, posY,
+                               this->glyphs[dot_font::LETTER_E], 1, color);
                 posX += math_renderer::BASE_W;
                 cnt++;
             default:
@@ -49,21 +58,25 @@ int DrawGraph::draw_number(int posX, int posY, double num, uint32_t color) {
 
 int DrawGraph::get_number_width(double num) {
     char buff[256];
+#ifdef ANDROID
     sprintf(buff, "%g", num);
+#else
+    sprintf_s(buff, sizeof(buff), "%g", num);
+#endif
     return strlen(buff) * math_renderer::BASE_W;
 }
 
 int DrawGraph::draw_char(int posX, int posY, char c, uint32_t color) {
     if ('0' <= c && c <= '9') {
-        draw_letter(posX, posY, c - '0' + math_renderer::LETTER_0, color);
+        draw_letter(posX, posY, c - '0' + dot_font::LETTER_0, color);
         return 1;
     }
     if ('A' <= c && c <= 'Z') {
-        draw_letter(posX, posY, c - 'A' + math_renderer::LETTER_A, color);
+        draw_letter(posX, posY, c - 'A' + dot_font::LETTER_A, color);
         return 1;
     }
     if ('a' <= c && c <= 'z') {
-        draw_letter(posX, posY, c - 'a' + math_renderer::LETTER_a, color);
+        draw_letter(posX, posY, c - 'a' + dot_font::LETTER_a, color);
         return 1;
     }
     return 0;

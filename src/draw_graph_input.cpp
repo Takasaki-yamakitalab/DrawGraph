@@ -61,6 +61,7 @@ int DrawGraph::process_input(std::string str) {
 }
 
 int DrawGraph::process_touch(int x, int y) {
+    // TODO
     return 0;
 }
 int DrawGraph::process_swipe(int dx, int dy) {
