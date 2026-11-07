@@ -198,6 +198,7 @@ void DrawGraph::apply_var_name() {
     if (cursor < 0 || graphs.size() <= cursor) return;
     if (var_name_temp.size() == 0) var_name_temp = {"x"};
     graphs[cursor].var = var_name_temp;
+    graphs[cursor].points.clear();
     var_name_temp.clear();
 }
 
