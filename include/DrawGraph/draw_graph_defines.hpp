@@ -61,6 +61,10 @@ constexpr uint32_t GRAPH_COLOR_PALETTE[] = {
     0xFF9D6AD6};
 #endif
 
+enum GRAPH_TYPE {
+    EXPLICIT_2D,
+    IMPLICIT_2D,
+};
 }  // namespace draw_graph
 
 #endif

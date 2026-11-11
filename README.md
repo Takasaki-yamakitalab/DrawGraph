@@ -37,7 +37,8 @@ cmake --install .
 # Description
 
 ビットマップ上に2Dグラフを描画します。
-現時点では、陽関数（$y=f(x)$ の形で表される関数）のプロットにのみ対応しています。
+~~現時点では、陽関数（$y=f(x)$ の形で表される関数）のプロットにのみ対応しています。~~
+Marching Squares による陰関数のプロットに対応しました。
 
 数式の入力には、MathRendererで使用する入力トークン列（`std::vector<math_renderer::Token>`）を使用します。
 なお、SciCalcで使用する数式文字列（`std::string`）を使用することも可能です。

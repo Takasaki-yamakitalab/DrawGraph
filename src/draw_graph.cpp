@@ -2,7 +2,11 @@
 #include <BitmapTool/bmp.hpp>
 #include <DotFont/dot_font_x11y23.bmp.hpp>
 #include <MathRenderer/bmp.hpp>
+#include <SciCalc/sci_calc.hpp>
+#include <SciCalc/sci_calc_define.hpp>
 #include <cmath>
+#include <cstdint>
+#include "DrawGraph/draw_graph_defines.hpp"
 
 namespace draw_graph {
 DrawGraph::DrawGraph(int width, int height)
@@ -149,6 +153,143 @@ void DrawGraph::draw_axis() {
     bmp::drawLine(draw_buffer.data(), width, height, axisX, 0, axisX, this->height - 1, AXIS_COLOR);
 }
 
+void DrawGraph::draw_graph(Graph& graph, bool bold, uint32_t color, sci_calc::SciCalc& calc) {
+    int x1, x2, y1, y2;
+    int lw = graph.lineWidth;
+    if (bold) lw *= 2;
+
+    std::string var;
+    for (auto& str : graph.var) {
+        var += str;
+    }
+    sci_calc::Complex memory = calc.get_memory(var);
+    for (x1 = 0; x1 < this->width; x1++) {
+        sci_calc::Complex ans = 0.0;
+        if (!graph.points.count(displayX2posX(x1))) {
+            calc.assign_memory(var, displayX2posX(x1));
+            ans = calc.calc(graph.formula);
+            graph.points[displayX2posX(x1)] = ans;
+        }
+        else {
+            ans = graph.points[displayX2posX(x1)];
+        }
+        if (std::isnan(ans.real()) || std::abs(ans.imag()) > 1e-15) continue;
+        y1 = posY2displayY(ans.real());
+        break;
+    }
+    while (x1 < this->width) {
+        x2 = x1 + 1;
+        sci_calc::Complex ans = 0.0;
+        if (!graph.points.count(displayX2posX(x2))) {
+            calc.assign_memory(var, displayX2posX(x2));
+            ans = calc.calc(graph.formula);
+            graph.points[displayX2posX(x2)] = ans;
+        }
+        else {
+            ans = graph.points[displayX2posX(x2)];
+        }
+        y2 = posY2displayY(ans.real());
+        if (y2 != GRAPH_NAN && std::abs(ans.imag()) < 1e-15) {
+            if (y1 == GRAPH_NAN) y1 = y2;
+            bmp::drawLine(this->draw_buffer.data(), width, height, x1, y1, x2, y2, lw, color);
+            y1 = y2;
+        }
+        x1 = x2;
+    }
+    calc.assign_memory(var, memory);
+}
+static int marchingSquare(double v0, double v1, double v2, double v3) {
+    int ret = 0;
+    if (v0 <= 0) ret += 0b1000;
+    if (v1 <= 0) ret += 0b0100;
+    if (v2 <= 0) ret += 0b0010;
+    if (v3 <= 0) ret += 0b0001;
+    return ret;
+}
+static inline sci_calc::Complex internalDiv(sci_calc::Complex p1, sci_calc::Complex p2, double w1, double w2) {
+    return (p1 * fabs(w2) + p2 * fabs(w1)) / (fabs(w1) + fabs(w2));
+}
+void DrawGraph::draw_impgraph(Graph &graph, bool bold, uint32_t color, sci_calc::SciCalc &calc, int step) {
+    sci_calc::Complex mem1 = calc.get_memory("x");
+    sci_calc::Complex mem2 = calc.get_memory("y");
+
+    int lw = graph.lineWidth;
+    if (bold) lw *= 2;
+    for (int y = 0; y < this->height + step; y += step) {
+        for (int x = 0; x < this->width + step; x += step) {
+            sci_calc::Complex pos(displayX2posX(x), displayY2posY(y));
+            if (graph.points.count(pos) == 0) {
+                calc.assign_memory("x", pos.real());
+                calc.assign_memory("y", pos.imag());
+                graph.points[pos] = calc.calc(graph.formula);
+            }
+        }
+    }
+    for (int i = 0; i < this->height; i += step) {
+        for (int j = 0; j < this->width; j += step) {
+            sci_calc::Complex p0(displayX2posX(j), displayY2posY(i));
+            sci_calc::Complex p1(displayX2posX(j), displayY2posY(i + step));
+            sci_calc::Complex p2(displayX2posX(j + step), displayY2posY(i + step));
+            sci_calc::Complex p3(displayX2posX(j + step), displayY2posY(i));
+            double v0 = graph.points[p0].real();
+            double v1 = graph.points[p1].real();
+            double v2 = graph.points[p2].real();
+            double v3 = graph.points[p3].real();
+            sci_calc::Complex pos1, pos2;
+            switch (marchingSquare(v0, v1, v2, v3)) {
+                case 0b0001: case 0b1110:
+                    pos1 = internalDiv(p3, p0, v3, v0);
+                    pos2 = internalDiv(p3, p2, v3, v2);
+                    bmp::drawLine(this->draw_buffer.data(), width, height, posX2displayX(pos1.real()), posY2displayY(pos1.imag()), posX2displayX(pos2.real()), posY2displayY(pos2.imag()), lw, color);
+                    break;
+                case 0b0010: case 0b1101:
+                    pos1 = internalDiv(p2, p3, v2, v3);
+                    pos2 = internalDiv(p2, p1, v2, v1);
+                    bmp::drawLine(this->draw_buffer.data(), width, height, posX2displayX(pos1.real()), posY2displayY(pos1.imag()), posX2displayX(pos2.real()), posY2displayY(pos2.imag()), lw, color);
+                    break;
+                case 0b0100: case 0b1011:
+                    pos1 = internalDiv(p1, p2, v1, v2);
+                    pos2 = internalDiv(p1, p0, v1, v0);
+                    bmp::drawLine(this->draw_buffer.data(), width, height, posX2displayX(pos1.real()), posY2displayY(pos1.imag()), posX2displayX(pos2.real()), posY2displayY(pos2.imag()), lw, color);
+                    break;
+                case 0b1000: case 0b0111:
+                    pos1 = internalDiv(p0, p1, v0, v1);
+                    pos2 = internalDiv(p0, p3, v0, v3);
+                    bmp::drawLine(this->draw_buffer.data(), width, height, posX2displayX(pos1.real()), posY2displayY(pos1.imag()), posX2displayX(pos2.real()), posY2displayY(pos2.imag()), lw, color);
+                    break;
+                case 0b0110: case 0b1001:
+                    pos1 = internalDiv(p0, p1, v0, v1);
+                    pos2 = internalDiv(p2, p3, v2, v3);
+                    bmp::drawLine(this->draw_buffer.data(), width, height, posX2displayX(pos1.real()), posY2displayY(pos1.imag()), posX2displayX(pos2.real()), posY2displayY(pos2.imag()), lw, color);
+                    break;
+                case 0b0011: case 0b1100:
+                    pos1 = internalDiv(p0, p3, v0, v3);
+                    pos2 = internalDiv(p1, p2, v1, v2);
+                    bmp::drawLine(this->draw_buffer.data(), width, height, posX2displayX(pos1.real()), posY2displayY(pos1.imag()), posX2displayX(pos2.real()), posY2displayY(pos2.imag()), lw, color);
+                    break;
+                case 0b0101:
+                    pos1 = internalDiv(p0, p1, v0, v1);
+                    pos2 = internalDiv(p0, p3, v0, v3);
+                    bmp::drawLine(this->draw_buffer.data(), width, height, posX2displayX(pos1.real()), posY2displayY(pos1.imag()), posX2displayX(pos2.real()), posY2displayY(pos2.imag()), lw, color);
+                    pos1 = internalDiv(p2, p3, v2, v3);
+                    pos2 = internalDiv(p2, p1, v2, v1);
+                    bmp::drawLine(this->draw_buffer.data(), width, height, posX2displayX(pos1.real()), posY2displayY(pos1.imag()), posX2displayX(pos2.real()), posY2displayY(pos2.imag()), lw, color);
+                case 0b1010:
+                    pos1 = internalDiv(p1, p2, v1, v2);
+                    pos2 = internalDiv(p1, p0, v1, v0);
+                    bmp::drawLine(this->draw_buffer.data(), width, height, posX2displayX(pos1.real()), posY2displayY(pos1.imag()), posX2displayX(pos2.real()), posY2displayY(pos2.imag()), lw, color);
+                    pos1 = internalDiv(p3, p0, v3, v0);
+                    pos2 = internalDiv(p3, p2, v3, v2);
+                    bmp::drawLine(this->draw_buffer.data(), width, height, posX2displayX(pos1.real()), posY2displayY(pos1.imag()), posX2displayX(pos2.real()), posY2displayY(pos2.imag()), lw, color);
+                case 0b0000: case 0b1111: default:
+                    break;
+            }
+        }
+    }
+    calc.assign_memory("x", mem1);
+    calc.assign_memory("y", mem2);
+}
+
 void DrawGraph::plot(const std::vector<math_renderer::Token>& input, const std::string& var) {
     plot(input, var, 0);
 }
@@ -160,6 +301,7 @@ void DrawGraph::plot(const std::vector<math_renderer::Token>& input, const std::
     math_renderer::make_math_str(input, index, formula);
 
     Graph graph;
+    graph.type = EXPLICIT_2D;
     graph.input = input;
     graph.formula = formula;
     graph.var = {var};
@@ -174,8 +316,42 @@ void DrawGraph::plot(const std::string& formula, const std::string& var) {
 void DrawGraph::plot(const std::string& formula, const std::string& var, uint32_t color) {
     if (formula.size() == 0) return;
     Graph graph;
+    graph.type = EXPLICIT_2D;
     graph.formula = formula;
     graph.var = {var};
+    graph.color = color;
+    graph.lineWidth = this->lineWidth;
+    this->graphs.push_back(graph);
+    this->cursor = this->graphs.size() - 1;
+}
+void DrawGraph::iplot(const std::vector<math_renderer::Token>& input) {
+    iplot(input, 0);
+}
+void DrawGraph::iplot(const std::vector<math_renderer::Token>& input, uint32_t color) {
+    if (input.size() == 0) return;
+
+    int index = 0;
+    std::string formula;
+    math_renderer::make_math_str(input, index, formula);
+
+    Graph graph;
+    graph.type = IMPLICIT_2D;
+    graph.input = input;
+    graph.formula = formula;
+    graph.color = color;
+    graph.lineWidth = this->lineWidth;
+    this->graphs.push_back(graph);
+    this->cursor = this->graphs.size() - 1;
+}
+void DrawGraph::iplot(const std::string& formula) {
+    iplot(formula, 0);
+}
+void DrawGraph::iplot(const std::string& formula, uint32_t color) {
+    if (formula.size() == 0) return;
+
+    Graph graph;
+    graph.type = IMPLICIT_2D;
+    graph.formula = formula;
     graph.color = color;
     graph.lineWidth = this->lineWidth;
     this->graphs.push_back(graph);
@@ -212,14 +388,21 @@ int DrawGraph::refresh(sci_calc::SciCalc& calc) {
 
     if (0 <= cursor && cursor < graphs.size()) {
         auto input = graphs[cursor].input;
-        int cur = 0;
-        math_renderer::insert_input(input, cur, "f");
-        math_renderer::insert_input(input, cur, "open_bracket");
-        for (auto& str : graphs[cursor].var) {
-            math_renderer::insert_input(input, cur, str);
+        if (graphs[cursor].type == EXPLICIT_2D) {
+            int cur = 0;
+            math_renderer::insert_input(input, cur, "f");
+            math_renderer::insert_input(input, cur, "open_bracket");
+            for (auto& str : graphs[cursor].var) {
+                math_renderer::insert_input(input, cur, str);
+            }
+            math_renderer::insert_input(input, cur, "close_bracket");
+            math_renderer::insert_input(input, cur, "equal");
         }
-        math_renderer::insert_input(input, cur, "close_bracket");
-        math_renderer::insert_input(input, cur, "equal");
+        if (graphs[cursor].type == IMPLICIT_2D) {
+            int cur = input.size();
+            math_renderer::insert_input(input, cur, "equal");
+            math_renderer::insert_input(input, cur, "0");
+        }
         this->draw_math_input(3, 3, input);
     }
 
@@ -229,56 +412,12 @@ int DrawGraph::refresh(sci_calc::SciCalc& calc) {
 
     calc.set_integral_N(1024);
 
-    int x1, y1, x2, y2;
     for (int i = 0; i < this->graphs.size(); i++) {
         auto& graph = this->graphs[i];
-        int lw = graph.lineWidth;
-        if (i == this->cursor) lw *= 2;
-
         uint32_t color = graph.color;
-        if (color == 0) {
-            color = GRAPH_COLOR_PALETTE[i % 10];
-        }
-
-        std::string var;
-        for (auto& str : graph.var) {
-            var += str;
-        }
-        sci_calc::Complex memory = calc.get_memory(var);
-        for (x1 = 0; x1 < this->width; x1++) {
-            sci_calc::Complex ans = 0.0;
-            if (!graph.points.count(displayX2posX(x1))) {
-                calc.assign_memory(var, displayX2posX(x1));
-                ans = calc.calc(graph.formula);
-                graph.points[displayX2posX(x1)] = ans;
-            }
-            else {
-                ans = graph.points[displayX2posX(x1)];
-            }
-            if (std::isnan(ans.real()) || std::abs(ans.imag()) > 1e-15) continue;
-            y1 = posY2displayY(ans.real());
-            break;
-        }
-        while (x1 < this->width) {
-            x2 = x1 + 1;
-            sci_calc::Complex ans = 0.0;
-            if (!graph.points.count(displayX2posX(x2))) {
-                calc.assign_memory(var, displayX2posX(x2));
-                ans = calc.calc(graph.formula);
-                graph.points[displayX2posX(x2)] = ans;
-            }
-            else {
-                ans = graph.points[displayX2posX(x2)];
-            }
-            y2 = posY2displayY(ans.real());
-            if (y2 != GRAPH_NAN && std::abs(ans.imag()) < 1e-15) {
-                if (y1 == GRAPH_NAN) y1 = y2;
-                bmp::drawLine(this->draw_buffer.data(), width, height, x1, y1, x2, y2, lw, color);
-                y1 = y2;
-            }
-            x1 = x2;
-        }
-        calc.assign_memory(var, memory);
+        if (color == 0) color = GRAPH_COLOR_PALETTE[i % 10];
+        if (graph.type == EXPLICIT_2D) draw_graph(graph, i == this->cursor, color, calc);
+        if (graph.type == IMPLICIT_2D) draw_impgraph(graph, i == this->cursor, color, calc);
     }
     if (this->cursor == this->graphs.size()) draw_axis();
 

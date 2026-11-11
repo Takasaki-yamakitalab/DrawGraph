@@ -3,17 +3,19 @@
 
 #include <SciCalc/sci_calc.hpp>
 #include <MathRenderer/math_renderer.hpp>
+#include <SciCalc/sci_calc_define.hpp>
 #include <unordered_map>
 #include "draw_graph_defines.hpp"
 
 namespace draw_graph {
 struct Graph {
+    int type;
     std::vector<math_renderer::Token> input;
     std::string formula;
     std::vector<std::string> var;
     uint32_t color;
     uint32_t lineWidth;
-    std::unordered_map<double, sci_calc::Complex> points;
+    std::unordered_map<sci_calc::Complex, sci_calc::Complex, sci_calc::ComplexHash> points;
 };
 
 class DrawGraph {
@@ -64,10 +66,16 @@ class DrawGraph {
     void draw_math_input(int posX, int posY, std::vector<math_renderer::Token>& input, uint32_t color = TEXT_COLOR);
 
     void draw_axis();
+    void draw_graph(Graph& graph, bool bold, uint32_t color, sci_calc::SciCalc& calc);
+    void draw_impgraph(Graph& graph, bool bold, uint32_t color, sci_calc::SciCalc& calc, int step = 10);
     void plot(const std::vector<math_renderer::Token>& input, const std::string& var);
     void plot(const std::vector<math_renderer::Token>& input, const std::string& var, uint32_t color);
     void plot(const std::string& formula, const std::string& var);
     void plot(const std::string& formula, const std::string& var, uint32_t color);
+    void iplot(const std::vector<math_renderer::Token>& input);
+    void iplot(const std::vector<math_renderer::Token>& input, uint32_t color);
+    void iplot(const std::string& formula);
+    void iplot(const std::string& formula, uint32_t color);
     void insert_var_name(const std::string& str);
     void delete_var_name();
     void apply_var_name();
@@ -75,7 +83,7 @@ class DrawGraph {
 
     int process_input(std::string str);
     int process_touch(int x, int y);
-    int process_swipe(int dx, int dy);
+    int process_drag(int dx, int dy);
 };
 }  // namespace draw_graph
 

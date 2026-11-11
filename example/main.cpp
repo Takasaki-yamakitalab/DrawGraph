@@ -6,7 +6,7 @@ int main(void) {
     sci_calc::SciCalc calc;
     draw_graph::DrawGraph plot(400, 300);
 
-    plot.plot("@lnx", "x");
+    plot.iplot("x^2+y^2-4");
     plot.refresh(calc);
     bmp::save32bitBMP("result0.bmp", 400, 300, plot.get_draw_buffer());
 
